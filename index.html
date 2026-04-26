@@ -1,0 +1,1368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>WMS Config Explorer</title>
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<!-- Mermaid -->
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.0/dist/mermaid.min.js"></script>
+
+<style>
+  :root {
+    --bg: #f5f3ee;
+    --bg-panel: #ffffff;
+    --ink: #1a1a1a;
+    --ink-soft: #5c5c5c;
+    --ink-faint: #9a9a9a;
+    --line: #e5e0d6;
+    --accent: #ff5a1f;
+    --accent-soft: #fff1eb;
+    --ok: #0d7a3a;
+    --warn: #b55900;
+    --err: #c2410c;
+    --shadow: 0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    font-size: 14px;
+    line-height: 1.5;
+    overflow-x: hidden;
+  }
+
+  /* ─── Grain overlay ───────────────────────────────── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.4;
+    z-index: 1;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* ─── Header ─────────────────────────────────────── */
+  header {
+    position: relative;
+    z-index: 10;
+    border-bottom: 1px solid var(--line);
+    background: var(--bg);
+    padding: 18px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .brand {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+  }
+  .brand-mark {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+  }
+  .brand-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 22px;
+    letter-spacing: -0.02em;
+  }
+  .brand-title em {
+    font-style: italic;
+    color: var(--accent);
+    font-weight: 400;
+  }
+  .header-meta {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-soft);
+  }
+  .header-meta .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--ok);
+    display: inline-block;
+    margin-right: 6px;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+  .btn-login {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    background: transparent;
+    border: 1px solid var(--ink);
+    color: var(--ink);
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-login:hover {
+    background: var(--ink);
+    color: var(--bg);
+  }
+  .btn-login.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  /* ─── Main layout ────────────────────────────────── */
+  main {
+    position: relative;
+    z-index: 2;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 48px 32px 80px;
+  }
+
+  /* ─── Hero / Search ──────────────────────────────── */
+  .hero {
+    margin-bottom: 48px;
+    position: relative;
+  }
+  .hero-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .hero-label::before {
+    content: '';
+    width: 24px;
+    height: 1px;
+    background: var(--ink-faint);
+  }
+  .hero h1 {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(32px, 5vw, 52px);
+    font-weight: 400;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    margin-bottom: 8px;
+    max-width: 900px;
+  }
+  .hero h1 em {
+    font-style: italic;
+    font-weight: 500;
+  }
+  .hero p {
+    color: var(--ink-soft);
+    font-size: 15px;
+    max-width: 600px;
+    margin-bottom: 32px;
+  }
+
+  .search-wrap {
+    position: relative;
+    max-width: 640px;
+  }
+  .search-box {
+    display: flex;
+    align-items: center;
+    background: var(--bg-panel);
+    border: 1px solid var(--line);
+    padding: 4px 4px 4px 20px;
+    box-shadow: var(--shadow);
+    transition: border-color 0.2s;
+  }
+  .search-box:focus-within {
+    border-color: var(--ink);
+  }
+  .search-box input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px;
+    padding: 14px 0;
+    color: var(--ink);
+  }
+  .search-box input::placeholder {
+    color: var(--ink-faint);
+  }
+  .search-hint {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-faint);
+    letter-spacing: 0.1em;
+    padding: 0 12px;
+    border-left: 1px solid var(--line);
+  }
+
+  /* ─── Results ───────────────────────────────────── */
+  .results-meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-faint);
+    margin-bottom: 16px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .results {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 16px;
+  }
+  .result-card {
+    background: var(--bg-panel);
+    border: 1px solid var(--line);
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+    overflow: hidden;
+  }
+  .result-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px;
+    height: 100%;
+    background: var(--accent);
+    transform: translateX(-3px);
+    transition: transform 0.2s;
+  }
+  .result-card:hover {
+    border-color: var(--ink);
+    transform: translateY(-1px);
+  }
+  .result-card:hover::before {
+    transform: translateX(0);
+  }
+  .result-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .result-card-config {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    background: var(--accent-soft);
+    padding: 3px 8px;
+    display: inline-block;
+  }
+  .result-card-client {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-faint);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .result-card-sp {
+    font-family: 'Fraunces', serif;
+    font-size: 20px;
+    font-weight: 500;
+    margin-bottom: 8px;
+    letter-spacing: -0.01em;
+  }
+  .result-card-desc {
+    color: var(--ink-soft);
+    font-size: 13px;
+    margin-bottom: 16px;
+    line-height: 1.5;
+  }
+  .result-card-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-faint);
+    letter-spacing: 0.05em;
+    padding-top: 12px;
+    border-top: 1px dashed var(--line);
+  }
+
+  .no-results {
+    padding: 48px;
+    text-align: center;
+    color: var(--ink-faint);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    border: 1px dashed var(--line);
+  }
+
+  /* ─── Detail view ───────────────────────────────── */
+  .detail-view {
+    display: none;
+  }
+  .detail-view.active {
+    display: block;
+  }
+  .browse-view.hidden {
+    display: none;
+  }
+  .back-btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    background: none;
+    border: none;
+    color: var(--ink-soft);
+    cursor: pointer;
+    padding: 0;
+    margin-bottom: 24px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .back-btn:hover {
+    color: var(--accent);
+  }
+  .back-btn::before { content: '←'; }
+
+  .detail-header {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 32px;
+    padding-bottom: 24px;
+    margin-bottom: 32px;
+    border-bottom: 1px solid var(--line);
+  }
+  .detail-config-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    background: var(--accent-soft);
+    padding: 4px 10px;
+    display: inline-block;
+    margin-bottom: 12px;
+  }
+  .detail-title {
+    font-family: 'Fraunces', serif;
+    font-size: 36px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+  }
+  .detail-desc {
+    color: var(--ink-soft);
+    font-size: 15px;
+    max-width: 600px;
+  }
+  .detail-meta-grid {
+    display: grid;
+    gap: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    min-width: 180px;
+  }
+  .detail-meta-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .detail-meta-item dt {
+    color: var(--ink-faint);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .detail-meta-item dd {
+    color: var(--ink);
+    font-weight: 500;
+  }
+
+  .flowchart-container {
+    background: var(--bg-panel);
+    border: 1px solid var(--line);
+    padding: 40px;
+    overflow: auto;
+    box-shadow: var(--shadow);
+    position: relative;
+  }
+  .flowchart-container::before {
+    content: 'FLOWCHART';
+    position: absolute;
+    top: 12px;
+    left: 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    color: var(--ink-faint);
+  }
+  .flowchart-container .mermaid {
+    display: flex;
+    justify-content: center;
+  }
+  .flowchart-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .tool-btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--ink-soft);
+    padding: 6px 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .tool-btn:hover {
+    border-color: var(--ink);
+    color: var(--ink);
+  }
+
+  /* ─── Admin panel ────────────────────────────────── */
+  .admin-panel {
+    display: none;
+    margin-top: 48px;
+    padding-top: 48px;
+    border-top: 2px solid var(--ink);
+  }
+  .admin-panel.active { display: block; }
+
+  .admin-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
+  .admin-title {
+    font-family: 'Fraunces', serif;
+    font-size: 24px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+  .admin-title::before {
+    content: '◆';
+    color: var(--accent);
+    margin-right: 10px;
+    font-size: 14px;
+    vertical-align: middle;
+  }
+  .admin-actions {
+    display: flex;
+    gap: 8px;
+  }
+  .btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 10px 18px;
+    cursor: pointer;
+    border: 1px solid var(--ink);
+    background: transparent;
+    color: var(--ink);
+    transition: all 0.15s;
+  }
+  .btn:hover { background: var(--ink); color: var(--bg); }
+  .btn-primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  .btn-primary:hover { background: #e04a10; border-color: #e04a10; color: #fff; }
+  .btn-ghost {
+    border-color: var(--line);
+    color: var(--ink-soft);
+  }
+  .btn-ghost:hover {
+    border-color: var(--ink);
+    background: transparent;
+    color: var(--ink);
+  }
+  .btn-danger {
+    border-color: var(--err);
+    color: var(--err);
+  }
+  .btn-danger:hover {
+    background: var(--err);
+    color: #fff;
+  }
+
+  .admin-table {
+    width: 100%;
+    background: var(--bg-panel);
+    border: 1px solid var(--line);
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .admin-table th {
+    text-align: left;
+    padding: 12px 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    border-bottom: 1px solid var(--line);
+    background: var(--bg);
+  }
+  .admin-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  .admin-table tr:last-child td { border-bottom: none; }
+  .admin-table tr:hover { background: var(--bg); }
+  .admin-table .config-cell {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    color: var(--accent);
+  }
+  .admin-table .actions-cell {
+    text-align: right;
+    white-space: nowrap;
+  }
+  .admin-table .mini-btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    background: none;
+    border: none;
+    color: var(--ink-soft);
+    cursor: pointer;
+    padding: 4px 8px;
+    margin-left: 4px;
+  }
+  .admin-table .mini-btn:hover { color: var(--accent); }
+  .admin-table .mini-btn.delete:hover { color: var(--err); }
+
+  /* ─── Modal ──────────────────────────────────────── */
+  .modal-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(26, 26, 26, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .modal-backdrop.active { display: flex; }
+  .modal {
+    background: var(--bg);
+    max-width: 720px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    border: 1px solid var(--ink);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  }
+  .modal-header {
+    padding: 20px 28px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .modal-title {
+    font-family: 'Fraunces', serif;
+    font-size: 20px;
+    font-weight: 500;
+  }
+  .modal-close {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: var(--ink-soft);
+    line-height: 1;
+  }
+  .modal-close:hover { color: var(--ink); }
+  .modal-body { padding: 24px 28px; }
+  .modal-footer {
+    padding: 16px 28px;
+    border-top: 1px solid var(--line);
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    background: var(--bg-panel);
+  }
+
+  /* ─── Form ──────────────────────────────────────── */
+  .field { margin-bottom: 18px; }
+  .field label {
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+  }
+  .field input, .field textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    background: var(--bg-panel);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .field textarea {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    resize: vertical;
+    min-height: 120px;
+    line-height: 1.5;
+  }
+  .field input:focus, .field textarea:focus {
+    border-color: var(--ink);
+  }
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .field-hint {
+    font-size: 11px;
+    color: var(--ink-faint);
+    margin-top: 4px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .preview-box {
+    background: var(--bg-panel);
+    border: 1px dashed var(--line);
+    padding: 20px;
+    margin-top: 8px;
+    min-height: 120px;
+    overflow: auto;
+  }
+  .preview-box .error-msg {
+    color: var(--err);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+  }
+
+  .prompt-box {
+    background: #1a1a1a;
+    color: #f5f3ee;
+    padding: 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    max-height: 300px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  /* ─── Toast ─────────────────────────────────────── */
+  .toast {
+    position: fixed;
+    bottom: 32px;
+    right: 32px;
+    background: var(--ink);
+    color: var(--bg);
+    padding: 12px 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    z-index: 200;
+    animation: slideUp 0.25s ease-out;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  /* ─── Responsive ────────────────────────────────── */
+  @media (max-width: 680px) {
+    header { padding: 14px 20px; flex-wrap: wrap; gap: 12px; }
+    main { padding: 32px 20px 60px; }
+    .detail-header { grid-template-columns: 1fr; }
+    .field-row { grid-template-columns: 1fr; }
+    .header-meta .info { display: none; }
+  }
+</style>
+</head>
+
+<body>
+
+<!-- ─── HEADER ─── -->
+<header>
+  <div class="brand">
+    <span class="brand-mark">WMS / 01</span>
+    <span class="brand-title">Config <em>Explorer</em></span>
+  </div>
+  <div class="header-meta">
+    <span class="info"><span class="dot"></span>System synced · v1.0</span>
+    <button class="btn-login" id="loginBtn" onclick="toggleLogin()">Sign in</button>
+  </div>
+</header>
+
+<!-- ─── MAIN ─── -->
+<main>
+
+  <!-- BROWSE VIEW -->
+  <section class="browse-view" id="browseView">
+    <div class="hero">
+      <div class="hero-label">Allocation logic reference</div>
+      <h1>Understand what happens <em>behind</em> every config name.</h1>
+      <p>Search by configuration name to view the allocation flowchart used by your WMS. No more digging through stored procedures.</p>
+
+      <div class="search-wrap">
+        <div class="search-box">
+          <input
+            type="text"
+            id="searchInput"
+            placeholder="Search config name — try STD_ECOM, XBORDER_RTL, B2B_BULK…"
+            oninput="onSearch()"
+            autocomplete="off"
+          />
+          <span class="search-hint">⌘K</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="results-meta" id="resultsMeta">All configurations · <span id="resultsCount">0</span> available</div>
+    <div class="results" id="resultsGrid"></div>
+
+    <!-- ADMIN PANEL (shown when logged in) -->
+    <div class="admin-panel" id="adminPanel">
+      <div class="admin-header">
+        <h2 class="admin-title">Admin · Manage flowcharts</h2>
+        <div class="admin-actions">
+          <button class="btn btn-ghost" onclick="showPromptTemplate()">Copy LLM prompt</button>
+          <button class="btn btn-ghost" onclick="importJSON()">Import JSON</button>
+          <button class="btn btn-ghost" onclick="exportJSON()">Export JSON</button>
+          <button class="btn btn-primary" onclick="openEditor()">+ New</button>
+        </div>
+      </div>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Config</th>
+            <th>SP name</th>
+            <th>Client</th>
+            <th>Updated</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="adminTableBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- DETAIL VIEW -->
+  <section class="detail-view" id="detailView">
+    <button class="back-btn" onclick="goBack()">Back to search</button>
+    <div class="detail-header">
+      <div>
+        <span class="detail-config-tag" id="detailConfig"></span>
+        <h2 class="detail-title" id="detailSP"></h2>
+        <p class="detail-desc" id="detailDesc"></p>
+      </div>
+      <dl class="detail-meta-grid" id="detailMeta"></dl>
+    </div>
+    <div class="flowchart-container">
+      <div class="mermaid" id="mermaidTarget"></div>
+    </div>
+    <div class="flowchart-toolbar">
+      <button class="tool-btn" onclick="window.print()">Print</button>
+      <button class="tool-btn" onclick="copyMermaid()">Copy source</button>
+    </div>
+  </section>
+
+</main>
+
+<!-- ─── LOGIN MODAL ─── -->
+<div class="modal-backdrop" id="loginModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Admin sign in</span>
+      <button class="modal-close" onclick="closeLogin()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="pwInput" placeholder="Enter admin password" onkeydown="if(event.key==='Enter') doLogin()"/>
+        <div class="field-hint">Demo password: <strong>admin123</strong> — change this in the source for production</div>
+      </div>
+      <div id="loginError" style="color:var(--err);font-size:12px;font-family:'JetBrains Mono',monospace;display:none;">✗ Incorrect password</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeLogin()">Cancel</button>
+      <button class="btn btn-primary" onclick="doLogin()">Sign in</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── EDITOR MODAL ─── -->
+<div class="modal-backdrop" id="editorModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="editorTitle">New flowchart</span>
+      <button class="modal-close" onclick="closeEditor()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field-row">
+        <div class="field">
+          <label>Config name *</label>
+          <input type="text" id="f_config" placeholder="e.g. STD_ECOM" />
+        </div>
+        <div class="field">
+          <label>SP name *</label>
+          <input type="text" id="f_sp" placeholder="e.g. spAllocateStandard" />
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Client</label>
+          <input type="text" id="f_client" placeholder="e.g. DemoClient_A" />
+        </div>
+        <div class="field">
+          <label>Updated by</label>
+          <input type="text" id="f_updatedBy" placeholder="Your name" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Description</label>
+        <input type="text" id="f_desc" placeholder="Short business description" />
+      </div>
+      <div class="field">
+        <label>Mermaid source *</label>
+        <textarea id="f_mermaid" placeholder="flowchart TD&#10;  A[Start] --> B{Decision}&#10;  B -->|Yes| C[Action]&#10;  B -->|No| D[Alt Action]" oninput="livePreview()"></textarea>
+        <div class="field-hint">Tip: use the "Copy LLM prompt" button to get a template for generating this from an SP.</div>
+      </div>
+      <div class="field">
+        <label>Live preview</label>
+        <div class="preview-box" id="previewBox">
+          <span style="color:var(--ink-faint);font-family:'JetBrains Mono',monospace;font-size:12px;">Preview appears here…</span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeEditor()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEntry()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── PROMPT MODAL ─── -->
+<div class="modal-backdrop" id="promptModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">LLM prompt template</span>
+      <button class="modal-close" onclick="closePrompt()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="color:var(--ink-soft);font-size:13px;margin-bottom:12px;">
+        Paste this prompt into your LLM (Claude / ChatGPT / etc.) along with your SP code. It will return a Mermaid flowchart you can paste into the editor above.
+      </p>
+      <div class="prompt-box" id="promptText"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closePrompt()">Close</button>
+      <button class="btn btn-primary" onclick="copyPrompt()">Copy to clipboard</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="fileInput" accept=".json" style="display:none" onchange="handleImport(event)"/>
+
+<script>
+  // ═══════════════════════════════════════════════════
+  //  DATA — Edit FLOWCHART_DATA to add real entries
+  //  Or use the admin panel to manage via UI
+  // ═══════════════════════════════════════════════════
+  const ADMIN_PASSWORD_HASH = 'b84ce7c9e9a9e6f6c5a9e1c8d3f2b1a0';
+  // Above is a placeholder. For demo, password is "admin123" checked directly.
+  // In production, use SHA-256 or move to a real auth layer.
+
+  let FLOWCHART_DATA = [
+    {
+      id: 'demo-1',
+      configName: 'STD_ECOM',
+      spName: 'spAllocateStandard',
+      client: 'DemoClient_A',
+      description: 'Standard e-commerce allocation — prioritizes primary warehouse, falls back to secondary if stock is insufficient.',
+      mermaid: `flowchart TD
+    A([Order received]) --> B{Stock in<br/>primary warehouse?}
+    B -->|Yes, full qty| C[Allocate primary]
+    B -->|Partial| D{Split allowed?}
+    B -->|No| E{Stock in<br/>secondary?}
+    D -->|Yes| F[Split between<br/>primary and secondary]
+    D -->|No| E
+    E -->|Yes| G[Allocate secondary]
+    E -->|No| H([Backorder])
+    C --> I([Generate pick slip])
+    F --> I
+    G --> I`,
+      lastUpdated: '2026-04-18',
+      updatedBy: 'Demo Admin'
+    },
+    {
+      id: 'demo-2',
+      configName: 'STD_ECOM',
+      spName: 'spAllocateStandard_Peak',
+      client: 'DemoClient_A',
+      description: 'Peak season variant — adds capacity check and rerouting logic for high-volume periods.',
+      mermaid: `flowchart TD
+    A([Order received]) --> B{Peak flag<br/>active?}
+    B -->|No| C[Use standard flow]
+    B -->|Yes| D{Primary capacity<br/>below threshold?}
+    D -->|Yes| E[Reroute to<br/>secondary]
+    D -->|No| F[Allocate primary]
+    E --> G([Generate pick slip])
+    F --> G
+    C --> G`,
+      lastUpdated: '2026-04-20',
+      updatedBy: 'Demo Admin'
+    },
+    {
+      id: 'demo-3',
+      configName: 'XBORDER_RTL',
+      spName: 'spAllocateCrossBorder',
+      client: 'DemoClient_B',
+      description: 'Cross-border retail allocation with customs pre-check and destination routing.',
+      mermaid: `flowchart TD
+    A([Order received]) --> B{Destination<br/>country restricted?}
+    B -->|Yes| C([Reject order])
+    B -->|No| D{Customs docs<br/>available?}
+    D -->|No| E[Hold for docs]
+    D -->|Yes| F{Route to<br/>regional hub?}
+    F -->|Yes| G[Allocate hub inventory]
+    F -->|No| H[Allocate local]
+    G --> I([Generate pick slip])
+    H --> I
+    E --> J([Notify CS team])`,
+      lastUpdated: '2026-04-15',
+      updatedBy: 'Demo Admin'
+    },
+    {
+      id: 'demo-4',
+      configName: 'B2B_BULK',
+      spName: 'spAllocateBulkB2B',
+      client: 'DemoClient_C',
+      description: 'B2B bulk allocation with pallet-level reservation and minimum order qty check.',
+      mermaid: `flowchart TD
+    A([PO received]) --> B{Order qty ><br/>MOQ?}
+    B -->|No| C([Reject / request adjustment])
+    B -->|Yes| D{Full pallet<br/>available?}
+    D -->|Yes| E[Reserve full pallets]
+    D -->|No| F{Mixed pallet<br/>allowed?}
+    F -->|Yes| G[Build mixed pallet]
+    F -->|No| H([Partial backorder])
+    E --> I([Generate pick slip])
+    G --> I`,
+      lastUpdated: '2026-04-10',
+      updatedBy: 'Demo Admin'
+    }
+  ];
+
+  // ═══════════════════════════════════════════════════
+  //  LLM PROMPT TEMPLATE
+  // ═══════════════════════════════════════════════════
+  const LLM_PROMPT = `You are a WMS flowchart specialist. Convert the following SQL Stored Procedure into Mermaid flowchart syntax.
+
+Requirements:
+1. Use business language (not technical SQL terms).
+   - GOOD: "Check inventory", "Allocate primary warehouse"
+   - BAD: "SELECT FROM INV_TBL", "EXEC usp_alloc"
+2. Decision points use {Question?} (diamond shape)
+3. Actions use [Action] (rectangle) 
+4. Start and end nodes use ([Start]) and ([End])
+5. Preserve every IF / CASE / WHILE branch
+6. Ignore purely technical operations (logging, transaction commits, error codes)
+7. Keep node labels under 30 characters; use <br/> for line breaks if needed
+8. Output ONLY the Mermaid code block — no explanation, no markdown fences
+
+Stored Procedure:
+---
+[PASTE YOUR SP HERE]
+---`;
+
+  // ═══════════════════════════════════════════════════
+  //  STATE
+  // ═══════════════════════════════════════════════════
+  let isAdmin = false;
+  let editingId = null;
+  let currentDetailId = null;
+
+  // ═══════════════════════════════════════════════════
+  //  INIT
+  // ═══════════════════════════════════════════════════
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: 'base',
+    themeVariables: {
+      primaryColor: '#fff1eb',
+      primaryTextColor: '#1a1a1a',
+      primaryBorderColor: '#ff5a1f',
+      lineColor: '#5c5c5c',
+      secondaryColor: '#f5f3ee',
+      tertiaryColor: '#ffffff',
+      fontFamily: 'Inter, sans-serif',
+      fontSize: '14px'
+    },
+    flowchart: { curve: 'basis', padding: 20 }
+  });
+
+  document.addEventListener('DOMContentLoaded', () => {
+    renderResults(FLOWCHART_DATA);
+    updateCount();
+
+    // Keyboard shortcut
+    document.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        document.getElementById('searchInput').focus();
+      }
+      if (e.key === 'Escape') {
+        closeLogin(); closeEditor(); closePrompt();
+      }
+    });
+  });
+
+  // ═══════════════════════════════════════════════════
+  //  SEARCH
+  // ═══════════════════════════════════════════════════
+  function onSearch() {
+    const q = document.getElementById('searchInput').value.toLowerCase().trim();
+    if (!q) {
+      renderResults(FLOWCHART_DATA);
+      document.getElementById('resultsMeta').innerHTML = `All configurations · <span id="resultsCount">${FLOWCHART_DATA.length}</span> available`;
+      return;
+    }
+    const filtered = FLOWCHART_DATA.filter(item =>
+      item.configName.toLowerCase().includes(q) ||
+      item.spName.toLowerCase().includes(q) ||
+      (item.client || '').toLowerCase().includes(q) ||
+      (item.description || '').toLowerCase().includes(q)
+    );
+    renderResults(filtered);
+    document.getElementById('resultsMeta').innerHTML = `Search · ${filtered.length} match${filtered.length === 1 ? '' : 'es'} for "<strong>${escapeHTML(q)}</strong>"`;
+  }
+
+  function renderResults(list) {
+    const grid = document.getElementById('resultsGrid');
+    if (list.length === 0) {
+      grid.innerHTML = `<div class="no-results" style="grid-column:1/-1;">No flowcharts match your search.</div>`;
+      return;
+    }
+    grid.innerHTML = list.map(item => `
+      <div class="result-card" onclick="openDetail('${item.id}')">
+        <div class="result-card-header">
+          <span class="result-card-config">${escapeHTML(item.configName)}</span>
+          <span class="result-card-client">${escapeHTML(item.client || '—')}</span>
+        </div>
+        <div class="result-card-sp">${escapeHTML(item.spName)}</div>
+        <div class="result-card-desc">${escapeHTML(item.description || 'No description.')}</div>
+        <div class="result-card-meta">
+          <span>UPD ${escapeHTML(item.lastUpdated || '—')}</span>
+          <span>→ View flowchart</span>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function updateCount() {
+    const el = document.getElementById('resultsCount');
+    if (el) el.textContent = FLOWCHART_DATA.length;
+  }
+
+  // ═══════════════════════════════════════════════════
+  //  DETAIL VIEW
+  // ═══════════════════════════════════════════════════
+  async function openDetail(id) {
+    const item = FLOWCHART_DATA.find(x => x.id === id);
+    if (!item) return;
+    currentDetailId = id;
+
+    document.getElementById('browseView').classList.add('hidden');
+    document.getElementById('detailView').classList.add('active');
+
+    document.getElementById('detailConfig').textContent = item.configName;
+    document.getElementById('detailSP').textContent = item.spName;
+    document.getElementById('detailDesc').textContent = item.description || '';
+    document.getElementById('detailMeta').innerHTML = `
+      <div class="detail-meta-item"><dt>Client</dt><dd>${escapeHTML(item.client || '—')}</dd></div>
+      <div class="detail-meta-item"><dt>Updated</dt><dd>${escapeHTML(item.lastUpdated || '—')}</dd></div>
+      <div class="detail-meta-item"><dt>By</dt><dd>${escapeHTML(item.updatedBy || '—')}</dd></div>
+    `;
+
+    const target = document.getElementById('mermaidTarget');
+    target.innerHTML = '';
+    try {
+      const { svg } = await mermaid.render('graph-' + Date.now(), item.mermaid);
+      target.innerHTML = svg;
+    } catch (err) {
+      target.innerHTML = `<div style="color:var(--err);font-family:monospace;padding:20px;">Failed to render: ${err.message}</div>`;
+    }
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function goBack() {
+    document.getElementById('browseView').classList.remove('hidden');
+    document.getElementById('detailView').classList.remove('active');
+    currentDetailId = null;
+  }
+
+  function copyMermaid() {
+    const item = FLOWCHART_DATA.find(x => x.id === currentDetailId);
+    if (!item) return;
+    navigator.clipboard.writeText(item.mermaid);
+    toast('Mermaid source copied');
+  }
+
+  // ═══════════════════════════════════════════════════
+  //  AUTH
+  // ═══════════════════════════════════════════════════
+  function toggleLogin() {
+    if (isAdmin) {
+      isAdmin = false;
+      document.getElementById('adminPanel').classList.remove('active');
+      document.getElementById('loginBtn').textContent = 'Sign in';
+      document.getElementById('loginBtn').classList.remove('active');
+      toast('Signed out');
+    } else {
+      document.getElementById('loginModal').classList.add('active');
+      setTimeout(() => document.getElementById('pwInput').focus(), 50);
+    }
+  }
+
+  function closeLogin() {
+    document.getElementById('loginModal').classList.remove('active');
+    document.getElementById('pwInput').value = '';
+    document.getElementById('loginError').style.display = 'none';
+  }
+
+  function doLogin() {
+    const pw = document.getElementById('pwInput').value;
+    // Simple password check. For production, replace with hash compare.
+    if (pw === 'admin123') {
+      isAdmin = true;
+      closeLogin();
+      document.getElementById('adminPanel').classList.add('active');
+      document.getElementById('loginBtn').textContent = 'Sign out';
+      document.getElementById('loginBtn').classList.add('active');
+      renderAdminTable();
+      toast('Signed in as admin');
+    } else {
+      document.getElementById('loginError').style.display = 'block';
+    }
+  }
+
+  // ═══════════════════════════════════════════════════
+  //  ADMIN TABLE
+  // ═══════════════════════════════════════════════════
+  function renderAdminTable() {
+    const tbody = document.getElementById('adminTableBody');
+    if (FLOWCHART_DATA.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--ink-faint);padding:32px;">No entries yet.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = FLOWCHART_DATA.map(item => `
+      <tr>
+        <td class="config-cell">${escapeHTML(item.configName)}</td>
+        <td>${escapeHTML(item.spName)}</td>
+        <td>${escapeHTML(item.client || '—')}</td>
+        <td style="color:var(--ink-faint);font-family:'JetBrains Mono',monospace;font-size:11px;">${escapeHTML(item.lastUpdated || '—')}</td>
+        <td class="actions-cell">
+          <button class="mini-btn" onclick="openEditor('${item.id}')">Edit</button>
+          <button class="mini-btn delete" onclick="deleteEntry('${item.id}')">Delete</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  // ═══════════════════════════════════════════════════
+  //  EDITOR
+  // ═══════════════════════════════════════════════════
+  function openEditor(id) {
+    editingId = id || null;
+    document.getElementById('editorTitle').textContent = id ? 'Edit flowchart' : 'New flowchart';
+
+    if (id) {
+      const item = FLOWCHART_DATA.find(x => x.id === id);
+      if (!item) return;
+      document.getElementById('f_config').value = item.configName;
+      document.getElementById('f_sp').value = item.spName;
+      document.getElementById('f_client').value = item.client || '';
+      document.getElementById('f_updatedBy').value = item.updatedBy || '';
+      document.getElementById('f_desc').value = item.description || '';
+      document.getElementById('f_mermaid').value = item.mermaid;
+    } else {
+      ['f_config','f_sp','f_client','f_updatedBy','f_desc','f_mermaid'].forEach(k => {
+        document.getElementById(k).value = '';
+      });
+    }
+
+    document.getElementById('editorModal').classList.add('active');
+    livePreview();
+  }
+
+  function closeEditor() {
+    document.getElementById('editorModal').classList.remove('active');
+    editingId = null;
+  }
+
+  async function livePreview() {
+    const code = document.getElementById('f_mermaid').value.trim();
+    const box = document.getElementById('previewBox');
+    if (!code) {
+      box.innerHTML = `<span style="color:var(--ink-faint);font-family:'JetBrains Mono',monospace;font-size:12px;">Preview appears here…</span>`;
+      return;
+    }
+    try {
+      const { svg } = await mermaid.render('preview-' + Date.now(), code);
+      box.innerHTML = svg;
+    } catch (err) {
+      box.innerHTML = `<div class="error-msg">✗ Syntax error: ${err.message || err}</div>`;
+    }
+  }
+
+  function saveEntry() {
+    const data = {
+      configName: document.getElementById('f_config').value.trim(),
+      spName: document.getElementById('f_sp').value.trim(),
+      client: document.getElementById('f_client').value.trim(),
+      updatedBy: document.getElementById('f_updatedBy').value.trim(),
+      description: document.getElementById('f_desc').value.trim(),
+      mermaid: document.getElementById('f_mermaid').value.trim(),
+      lastUpdated: new Date().toISOString().slice(0, 10)
+    };
+
+    if (!data.configName || !data.spName || !data.mermaid) {
+      toast('✗ Config name, SP name and Mermaid source are required');
+      return;
+    }
+
+    if (editingId) {
+      const idx = FLOWCHART_DATA.findIndex(x => x.id === editingId);
+      if (idx > -1) FLOWCHART_DATA[idx] = { ...FLOWCHART_DATA[idx], ...data };
+      toast('Updated');
+    } else {
+      FLOWCHART_DATA.push({ id: 'e-' + Date.now(), ...data });
+      toast('Added');
+    }
+
+    closeEditor();
+    renderResults(FLOWCHART_DATA);
+    renderAdminTable();
+    updateCount();
+  }
+
+  function deleteEntry(id) {
+    const item = FLOWCHART_DATA.find(x => x.id === id);
+    if (!item) return;
+    if (!confirm(`Delete "${item.configName} / ${item.spName}"?`)) return;
+    FLOWCHART_DATA = FLOWCHART_DATA.filter(x => x.id !== id);
+    renderResults(FLOWCHART_DATA);
+    renderAdminTable();
+    updateCount();
+    toast('Deleted');
+  }
+
+  // ═══════════════════════════════════════════════════
+  //  IMPORT / EXPORT
+  // ═══════════════════════════════════════════════════
+  function exportJSON() {
+    const blob = new Blob([JSON.stringify(FLOWCHART_DATA, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `wms-flowcharts-${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast('Exported JSON — paste contents back into the source to persist');
+  }
+
+  function importJSON() {
+    document.getElementById('fileInput').click();
+  }
+
+  function handleImport(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const parsed = JSON.parse(ev.target.result);
+        if (!Array.isArray(parsed)) throw new Error('Not an array');
+        if (!confirm(`Import ${parsed.length} entries? This will REPLACE current data.`)) return;
+        FLOWCHART_DATA = parsed;
+        renderResults(FLOWCHART_DATA);
+        renderAdminTable();
+        updateCount();
+        toast(`Imported ${parsed.length} entries`);
+      } catch (err) {
+        toast('✗ Invalid JSON file');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  }
+
+  // ═══════════════════════════════════════════════════
+  //  PROMPT TEMPLATE
+  // ═══════════════════════════════════════════════════
+  function showPromptTemplate() {
+    document.getElementById('promptText').textContent = LLM_PROMPT;
+    document.getElementById('promptModal').classList.add('active');
+  }
+  function closePrompt() {
+    document.getElementById('promptModal').classList.remove('active');
+  }
+  function copyPrompt() {
+    navigator.clipboard.writeText(LLM_PROMPT);
+    toast('Prompt copied — paste into your LLM with the SP code');
+    closePrompt();
+  }
+
+  // ═══════════════════════════════════════════════════
+  //  UTILS
+  // ═══════════════════════════════════════════════════
+  function escapeHTML(s) {
+    return String(s || '').replace(/[&<>"']/g, c => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    })[c]);
+  }
+
+  function toast(msg) {
+    const existing = document.querySelector('.toast');
+    if (existing) existing.remove();
+    const el = document.createElement('div');
+    el.className = 'toast';
+    el.textContent = msg;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 2800);
+  }
+</script>
+
+</body>
+</html>

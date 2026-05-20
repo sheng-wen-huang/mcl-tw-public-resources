@@ -54,8 +54,18 @@ export const authOptions = {
 
 export function getPublicCorsHeaders() {
   const site = process.env.PUBLIC_SITE_URL;
+  let origin = "*";
+
+  if (site) {
+    try {
+      origin = new URL(site).origin;
+    } catch {
+      origin = site;
+    }
+  }
+
   return {
-    "Access-Control-Allow-Origin": site || "*",
+    "Access-Control-Allow-Origin": origin,
     "Access-Control-Allow-Methods": "GET, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
     "Cache-Control": "no-store"

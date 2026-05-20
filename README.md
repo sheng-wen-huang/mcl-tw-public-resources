@@ -57,6 +57,36 @@ For a team of 1–2 IT maintainers and a few dozen configs, this works fine. If 
 - [Mermaid.js](https://mermaid.js.org/) for flowchart rendering (via CDN)
 - Google Fonts (Fraunces + Inter + JetBrains Mono)
 
+### Optional Vercel + MongoDB Admin Backend
+
+This repo also includes `vercel-app/`, a Next.js admin/API app for:
+
+- GitHub OAuth admin sign-in
+- MongoDB Atlas storage
+- Flowchart CRUD
+- `updatedBy` / `updatedAt` tracking from the signed-in GitHub user
+- Public read API for the GitHub Pages viewer
+
+Deploy notes:
+
+1. Create a Vercel project with root directory set to `vercel-app`.
+2. Add environment variables from `vercel-app/.env.example`.
+3. In GitHub OAuth App settings, set the callback URL to:
+
+   ```text
+   https://YOUR-VERCEL-PROJECT.vercel.app/api/auth/callback/github
+   ```
+
+4. After Vercel deploys, edit `config.js`:
+
+   ```js
+   window.WMS_API_BASE_URL = 'https://YOUR-VERCEL-PROJECT.vercel.app';
+   ```
+
+5. Commit and push `config.js`; GitHub Pages will then load flowcharts from MongoDB.
+
+Do not commit real secrets. Keep MongoDB URI, GitHub OAuth secret, and NextAuth secret in Vercel environment variables only.
+
 ### Security notes
 
 ⚠️ **This is a lightweight tool, not a security boundary.**

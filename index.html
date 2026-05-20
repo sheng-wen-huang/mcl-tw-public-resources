@@ -421,6 +421,47 @@
     gap: 8px;
     margin-top: 12px;
   }
+  .detail-sections {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin-top: 20px;
+  }
+  .detail-section {
+    background: var(--bg-panel);
+    border: 1px solid var(--line);
+    padding: 18px;
+  }
+  .detail-section h3 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 10px;
+  }
+  .detail-section p,
+  .detail-section li {
+    color: var(--ink-soft);
+    font-size: 13px;
+  }
+  .detail-section ul {
+    padding-left: 18px;
+  }
+  .example-card {
+    border-top: 1px solid var(--line);
+    padding-top: 10px;
+    margin-top: 10px;
+  }
+  .example-card:first-child {
+    border-top: 0;
+    margin-top: 0;
+    padding-top: 0;
+  }
+  .example-card strong {
+    display: block;
+    margin-bottom: 4px;
+  }
   .tool-btn {
     font-family: 'JetBrains Mono', monospace;
     font-size: 10px;
@@ -703,6 +744,7 @@
     header { padding: 14px 20px; flex-wrap: wrap; gap: 12px; }
     main { padding: 32px 20px 60px; }
     .detail-header { grid-template-columns: 1fr; }
+    .detail-sections { grid-template-columns: 1fr; }
     .field-row { grid-template-columns: 1fr; }
     .header-meta .info { display: none; }
   }
@@ -719,7 +761,7 @@
   </div>
   <div class="header-meta">
     <span class="info"><span class="dot"></span>System synced · v1.0</span>
-    <button class="btn-login" id="loginBtn" onclick="toggleLogin()">Sign in</button>
+    <button class="btn-login" id="loginBtn" onclick="toggleLogin()">Admin</button>
   </div>
 </header>
 
@@ -794,6 +836,7 @@
       <button class="tool-btn" onclick="window.print()">Print</button>
       <button class="tool-btn" onclick="copyMermaid()">Copy source</button>
     </div>
+    <div class="detail-sections" id="detailSections"></div>
   </section>
 
 </main>
@@ -893,6 +936,7 @@
 
 <input type="file" id="fileInput" accept=".json" style="display:none" onchange="handleImport(event)"/>
 
+<script src="./config.js"></script>
 <script>
   // ═══════════════════════════════════════════════════
   //  DATA — Edit FLOWCHART_DATA to add real entries
@@ -1031,7 +1075,8 @@ Stored Procedure:
     flowchart: { curve: 'basis', padding: 20 }
   });
 
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', async () => {
+    await loadRemoteFlowchartData();
     renderResults(FLOWCHART_DATA);
     updateCount();
 
@@ -1046,6 +1091,41 @@ Stored Procedure:
       }
     });
   });
+
+  // ═══════════════════════════════════════════════════
+  //  REMOTE DATA
+  // ═══════════════════════════════════════════════════
+  function getApiBase() {
+    return String(window.WMS_API_BASE_URL || '').replace(/\/$/, '');
+  }
+
+  async function loadRemoteFlowchartData() {
+    const apiBase = getApiBase();
+    if (!apiBase) return;
+
+    try {
+      const res = await fetch(`${apiBase}/api/flows`, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`API returned ${res.status}`);
+      const remote = await res.json();
+      FLOWCHART_DATA = remote.map(item => ({
+        id: item.id,
+        configName: item.configName,
+        spName: item.spName,
+        client: item.client || '',
+        description: item.description || item.overview || '',
+        overview: item.overview || item.description || '',
+        whenItApplies: item.whenItApplies || '',
+        mermaid: item.mermaid,
+        examples: item.examples || [],
+        knownExceptions: item.knownExceptions || [],
+        relatedConfigs: item.relatedConfigs || [],
+        lastUpdated: item.updatedAt ? item.updatedAt.slice(0, 10) : '',
+        updatedBy: item.updatedBy || ''
+      }));
+    } catch (err) {
+      toast(`Using demo data — API load failed: ${err.message}`);
+    }
+  }
 
   // ═══════════════════════════════════════════════════
   //  SEARCH
@@ -1107,12 +1187,13 @@ Stored Procedure:
 
     document.getElementById('detailConfig').textContent = item.configName;
     document.getElementById('detailSP').textContent = item.spName;
-    document.getElementById('detailDesc').textContent = item.description || '';
+    document.getElementById('detailDesc').textContent = item.overview || item.description || '';
     document.getElementById('detailMeta').innerHTML = `
       <div class="detail-meta-item"><dt>Client</dt><dd>${escapeHTML(item.client || '—')}</dd></div>
       <div class="detail-meta-item"><dt>Updated</dt><dd>${escapeHTML(item.lastUpdated || '—')}</dd></div>
       <div class="detail-meta-item"><dt>By</dt><dd>${escapeHTML(item.updatedBy || '—')}</dd></div>
     `;
+    document.getElementById('detailSections').innerHTML = renderDetailSections(item);
 
     const target = document.getElementById('mermaidTarget');
     target.innerHTML = '';
@@ -1143,6 +1224,11 @@ Stored Procedure:
   //  AUTH
   // ═══════════════════════════════════════════════════
   function toggleLogin() {
+    const apiBase = getApiBase();
+    if (apiBase) {
+      window.location.href = `${apiBase}/admin`;
+      return;
+    }
     if (isAdmin) {
       isAdmin = false;
       document.getElementById('adminPanel').classList.remove('active');
@@ -1351,6 +1437,37 @@ Stored Procedure:
     return String(s || '').replace(/[&<>"']/g, c => ({
       '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
     })[c]);
+  }
+
+  function renderDetailSections(item) {
+    const examples = item.examples || [];
+    const exceptions = item.knownExceptions || [];
+    const related = item.relatedConfigs || [];
+
+    return `
+      <section class="detail-section">
+        <h3>When it applies</h3>
+        <p>${escapeHTML(item.whenItApplies || 'No applicability notes yet.')}</p>
+      </section>
+      <section class="detail-section">
+        <h3>Known exceptions</h3>
+        ${exceptions.length ? `<ul>${exceptions.map(x => `<li>${escapeHTML(x)}</li>`).join('')}</ul>` : '<p>No known exceptions documented yet.</p>'}
+      </section>
+      <section class="detail-section">
+        <h3>Example orders</h3>
+        ${examples.length ? examples.map(example => `
+          <div class="example-card">
+            <strong>${escapeHTML(example.title || 'Example')}</strong>
+            <p>${escapeHTML(example.scenario || '')}</p>
+            <p><strong>Expected:</strong> ${escapeHTML(example.expectedResult || '')}</p>
+          </div>
+        `).join('') : '<p>No examples documented yet.</p>'}
+      </section>
+      <section class="detail-section">
+        <h3>Related configs</h3>
+        ${related.length ? `<p>${related.map(escapeHTML).join(', ')}</p>` : '<p>No related configs documented yet.</p>'}
+      </section>
+    `;
   }
 
   function toast(msg) {

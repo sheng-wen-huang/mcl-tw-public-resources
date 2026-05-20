@@ -1138,16 +1138,21 @@ Stored Procedure:
       document.getElementById('resultsMeta').innerHTML = `All configurations · <span id="resultsCount">${FLOWCHART_DATA.length}</span> available`;
       return;
     }
-    const filtered = FLOWCHART_DATA.filter(item =>
-      item.configName.toLowerCase().includes(q) ||
-      item.spName.toLowerCase().includes(q) ||
-      (item.client || '').toLowerCase().includes(q) ||
-      (item.description || '').toLowerCase().includes(q) ||
-      getHashtags(item).some(tag =>
-        `#${tag}`.toLowerCase().includes(q) ||
-        tag.toLowerCase().includes(q.replace(/^#/, ''))
-      )
-    );
+    const isHashtagSearch = q.startsWith('#');
+    const normalizedTagQuery = q.replace(/^#/, '');
+    const filtered = FLOWCHART_DATA.filter(item => {
+      if (isHashtagSearch) {
+        return getHashtags(item).some(tag => tag.toLowerCase() === normalizedTagQuery);
+      }
+
+      return (
+        item.configName.toLowerCase().includes(q) ||
+        item.spName.toLowerCase().includes(q) ||
+        (item.client || '').toLowerCase().includes(q) ||
+        (item.description || '').toLowerCase().includes(q) ||
+        getHashtags(item).some(tag => tag.toLowerCase().includes(q))
+      );
+    });
     renderResults(filtered);
     document.getElementById('resultsMeta').innerHTML = `Search · ${filtered.length} match${filtered.length === 1 ? '' : 'es'} for "<strong>${escapeHTML(q)}</strong>"`;
   }

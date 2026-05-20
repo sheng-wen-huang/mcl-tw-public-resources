@@ -136,8 +136,13 @@ export default function AdminDashboard({ user, publicSiteUrl }) {
     await loadFlows();
   }
 
+  const homepageUrl = publicSiteUrl === "https://sheng-wen-huang.github.io"
+    ? "https://sheng-wen-huang.github.io/mcl-tw-public-resources/"
+    : publicSiteUrl;
+
   return (
     <main className="shell">
+      <a className="back-link" href={homepageUrl}>Back to homepage</a>
       <div className="topbar">
         <div>
           <p className="eyebrow">Admin portal</p>
@@ -149,7 +154,6 @@ export default function AdminDashboard({ user, publicSiteUrl }) {
         </div>
         <div className="actions">
           <button className="button primary" onClick={startNew}>New flow</button>
-          <a className="button" href={publicSiteUrl}>Back to homepage</a>
           <a className="button" href="/api/auth/signout">Sign out</a>
         </div>
       </div>

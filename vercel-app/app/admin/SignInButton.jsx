@@ -7,7 +7,7 @@ export default function SignInButton() {
     <button
       className="button primary"
       type="button"
-      onClick={() => signIn("github", { callbackUrl: "/admin" })}
+      onClick={() => signIn("github", { callbackUrl: "/mcl-tw-public-resources/admin" })}
     >
       Sign in with GitHub
     </button>

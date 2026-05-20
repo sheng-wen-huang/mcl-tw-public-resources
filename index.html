@@ -8,7 +8,7 @@
 <!-- Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
 <!-- Mermaid -->
 <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.0/dist/mermaid.min.js"></script>
@@ -27,15 +27,24 @@
     --warn: #b55900;
     --err: #c2410c;
     --shadow: 0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Consolas, monospace;
+    --text-xs: 11px;
+    --text-sm: 13px;
+    --text-base: 14px;
+    --text-md: 15px;
+    --text-lg: 20px;
+    --text-xl: 24px;
+    --text-display: clamp(34px, 5vw, 52px);
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; }
   body {
-    font-family: 'Inter', -apple-system, sans-serif;
+    font-family: var(--font-sans);
     background: var(--bg);
     color: var(--ink);
-    font-size: 14px;
+    font-size: var(--text-base);
     line-height: 1.5;
     overflow-x: hidden;
   }
@@ -75,10 +84,10 @@
     text-transform: uppercase;
   }
   .brand-title {
-    font-family: 'Fraunces', serif;
-    font-weight: 500;
-    font-size: 22px;
-    letter-spacing: -0.02em;
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: var(--text-lg);
+    letter-spacing: 0;
   }
   .brand-title em {
     font-style: italic;
@@ -158,11 +167,11 @@
     background: var(--ink-faint);
   }
   .hero h1 {
-    font-family: 'Fraunces', serif;
-    font-size: clamp(32px, 5vw, 52px);
-    font-weight: 400;
-    line-height: 1.05;
-    letter-spacing: -0.03em;
+    font-family: var(--font-sans);
+    font-size: var(--text-display);
+    font-weight: 700;
+    line-height: 1.08;
+    letter-spacing: 0;
     margin-bottom: 8px;
     max-width: 900px;
   }
@@ -278,11 +287,11 @@
     text-transform: uppercase;
   }
   .result-card-sp {
-    font-family: 'Fraunces', serif;
-    font-size: 20px;
-    font-weight: 500;
+    font-family: var(--font-sans);
+    font-size: var(--text-lg);
+    font-weight: 700;
     margin-bottom: 8px;
-    letter-spacing: -0.01em;
+    letter-spacing: 0;
   }
   .result-card-desc {
     color: var(--ink-soft);
@@ -360,10 +369,10 @@
     margin-bottom: 12px;
   }
   .detail-title {
-    font-family: 'Fraunces', serif;
-    font-size: 36px;
-    font-weight: 500;
-    letter-spacing: -0.02em;
+    font-family: var(--font-sans);
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: 0;
     margin-bottom: 8px;
   }
   .detail-desc {
@@ -495,10 +504,10 @@
     margin-bottom: 24px;
   }
   .admin-title {
-    font-family: 'Fraunces', serif;
-    font-size: 24px;
-    font-weight: 500;
-    letter-spacing: -0.01em;
+    font-family: var(--font-sans);
+    font-size: var(--text-xl);
+    font-weight: 700;
+    letter-spacing: 0;
   }
   .admin-title::before {
     content: '◆';
@@ -626,9 +635,9 @@
     align-items: center;
   }
   .modal-title {
-    font-family: 'Fraunces', serif;
-    font-size: 20px;
-    font-weight: 500;
+    font-family: var(--font-sans);
+    font-size: var(--text-lg);
+    font-weight: 700;
   }
   .modal-close {
     background: none;
@@ -738,6 +747,82 @@
     from { transform: translateY(20px); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
   }
+
+  /* ─── Type system normalization ─────────────────── */
+  body,
+  button,
+  input,
+  textarea,
+  select {
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    letter-spacing: 0;
+  }
+  .brand-title,
+  .hero h1,
+  .result-card-sp,
+  .detail-title,
+  .admin-title,
+  .modal-title {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    letter-spacing: 0;
+  }
+  .brand-title { font-size: var(--text-lg); }
+  .hero h1 {
+    font-size: var(--text-display);
+    line-height: 1.08;
+  }
+  .result-card-sp,
+  .modal-title { font-size: var(--text-lg); }
+  .detail-title { font-size: 32px; }
+  .admin-title { font-size: var(--text-xl); }
+  .brand-mark,
+  .header-meta,
+  .btn-login,
+  .hero-label,
+  .search-box input,
+  .search-hint,
+  .results-meta,
+  .result-card-config,
+  .result-card-client,
+  .result-card-meta,
+  .no-results,
+  .back-btn,
+  .detail-config-tag,
+  .detail-meta-grid,
+  .flowchart-container::before,
+  .detail-section h3,
+  .tool-btn,
+  .btn,
+  .admin-table th,
+  .admin-table .config-cell,
+  .admin-table .mini-btn,
+  .field label,
+  .field textarea,
+  .field-hint,
+  .prompt-box,
+  .toast {
+    font-family: var(--font-mono);
+  }
+  .brand-mark,
+  .header-meta,
+  .btn-login,
+  .hero-label,
+  .results-meta,
+  .back-btn,
+  .detail-meta-grid,
+  .tool-btn,
+  .btn { font-size: var(--text-xs); }
+  .result-card-config,
+  .detail-config-tag,
+  .no-results,
+  .result-card-desc,
+  .detail-section p,
+  .detail-section li { font-size: var(--text-sm); }
+  .hero p,
+  .detail-desc,
+  .search-box input { font-size: var(--text-md); }
 
   /* ─── Responsive ────────────────────────────────── */
   @media (max-width: 680px) {
@@ -1236,7 +1321,7 @@ Stored Procedure:
   function toggleLogin() {
     const apiBase = getApiBase();
     if (apiBase) {
-      window.location.href = `${apiBase}/admin`;
+      window.location.href = `${apiBase}/mcl-tw-public-resources/admin`;
       return;
     }
     if (isAdmin) {

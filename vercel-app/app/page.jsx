@@ -10,7 +10,7 @@ export default function HomePage() {
         read published flowcharts from this deployment's public API.
       </p>
       <div className="actions">
-        <Link className="button primary" href="/admin">Open admin</Link>
+        <Link className="button primary" href="/mcl-tw-public-resources/admin">Open admin</Link>
         <Link className="button" href="/api/flows">View API data</Link>
       </div>
     </main>

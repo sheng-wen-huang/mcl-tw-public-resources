@@ -55,7 +55,7 @@ For a team of 1–2 IT maintainers and a few dozen configs, this works fine. If 
 
 - Vanilla HTML + CSS + JavaScript (no build step)
 - [Mermaid.js](https://mermaid.js.org/) for flowchart rendering (via CDN)
-- Google Fonts (Fraunces + Inter + JetBrains Mono)
+- Google Fonts (Inter + JetBrains Mono)
 
 ### Optional Vercel + MongoDB Admin Backend
 
@@ -157,7 +157,7 @@ Internal use. Adapt freely.
 
 - 純 HTML + CSS + JavaScript（無需編譯步驟）
 - [Mermaid.js](https://mermaid.js.org/) 負責流程圖渲染（透過 CDN）
-- Google Fonts（Fraunces + Inter + JetBrains Mono）
+- Google Fonts（Inter + JetBrains Mono）
 
 ### 安全性注意事項
 

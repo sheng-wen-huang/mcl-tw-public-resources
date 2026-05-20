@@ -9,7 +9,7 @@ const emptyForm = {
   client: "",
   logicType: "Allocation",
   overview: "",
-  mermaid: "flowchart TD\n  A([Start]) --> B[Check order]\n  B --> C([End])",
+  mermaid: "",
   examplesText: "",
   hashtagsText: ""
 };
@@ -167,8 +167,10 @@ export default function AdminDashboard({ user, publicSiteUrl }) {
       await loadFlows();
       setSelectedId(data.id);
       setForm(flowToForm(data));
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
       setMessage(err.message);
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } finally {
       setIsSaving(false);
     }
@@ -189,6 +191,7 @@ export default function AdminDashboard({ user, publicSiteUrl }) {
     setSelectedId(null);
     setForm(emptyForm);
     await loadFlows();
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   const homepageUrl = publicSiteUrl === "https://sheng-wen-huang.github.io"
@@ -271,7 +274,13 @@ export default function AdminDashboard({ user, publicSiteUrl }) {
 
             <div className="field">
               <label>Mermaid source</label>
-              <textarea className="tall" value={form.mermaid} onChange={(e) => updateField("mermaid", e.target.value)} required />
+              <textarea
+                className="tall"
+                value={form.mermaid}
+                onChange={(e) => updateField("mermaid", e.target.value)}
+                placeholder={"flowchart TD\n  A([Start]) --> B[Check order]\n  B --> C([End])"}
+                required
+              />
             </div>
 
             <div className="field">

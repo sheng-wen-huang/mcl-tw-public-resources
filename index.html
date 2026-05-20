@@ -1189,7 +1189,7 @@ Stored Procedure:
         knownExceptions: item.knownExceptions || [],
         hashtags: item.hashtags || item.relatedConfigs || [],
         relatedConfigs: item.relatedConfigs || [],
-        lastUpdated: item.updatedAt ? item.updatedAt.slice(0, 10) : '',
+        lastUpdated: item.updatedAt ? formatDateTime(item.updatedAt) : '',
         updatedBy: item.updatedBy || ''
       }));
     } catch (err) {
@@ -1419,7 +1419,7 @@ Stored Procedure:
       updatedBy: document.getElementById('f_updatedBy').value.trim(),
       description: document.getElementById('f_desc').value.trim(),
       mermaid: document.getElementById('f_mermaid').value.trim(),
-      lastUpdated: new Date().toISOString().slice(0, 10)
+      lastUpdated: formatDateTime(new Date().toISOString())
     };
 
     if (!data.configName || !data.spName || !data.mermaid) {
@@ -1516,6 +1516,14 @@ Stored Procedure:
     return String(s || '').replace(/[&<>"']/g, c => ({
       '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
     })[c]);
+  }
+
+  function formatDateTime(value) {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return String(value);
+    const pad = n => String(n).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
   }
 
   function renderDetailSections(item) {

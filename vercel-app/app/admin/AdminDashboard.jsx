@@ -83,16 +83,18 @@ export default function AdminDashboard({ user, publicSiteUrl }) {
       securityLevel: "strict",
       theme: "base",
       themeVariables: {
-        primaryColor: "#fff0e8",
-        primaryTextColor: "#171717",
-        primaryBorderColor: "#e6531c",
-        lineColor: "#66625d",
-        secondaryColor: "#f6f5f2",
+        primaryColor: "#fff1eb",
+        primaryTextColor: "#1a1a1a",
+        primaryBorderColor: "#ff5a1f",
+        nodeTextColor: "#1a1a1a",
+        textColor: "#1a1a1a",
+        lineColor: "#5c5c5c",
+        secondaryColor: "#f5f3ee",
         tertiaryColor: "#ffffff",
         fontFamily: "Inter, sans-serif",
         fontSize: "14px"
       },
-      flowchart: { curve: "basis", padding: 20 }
+      flowchart: { curve: "basis", padding: 20, htmlLabels: false }
     });
   }, []);
 
@@ -207,7 +209,6 @@ export default function AdminDashboard({ user, publicSiteUrl }) {
         </div>
         <div className="actions">
           <button className="button primary" onClick={startNew}>New flow</button>
-          <a className="button" href="/api/auth/signout">Sign out</a>
         </div>
       </div>
 

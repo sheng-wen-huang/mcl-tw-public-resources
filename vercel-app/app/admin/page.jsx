@@ -1,9 +1,12 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../lib/auth";
 import AdminDashboard from "./AdminDashboard";
+import SignInButton from "./SignInButton";
 
-export default async function AdminPage() {
+export default async function AdminPage({ searchParams }) {
   const session = await getServerSession(authOptions);
+  const params = await searchParams;
+  const error = params?.error;
 
   if (!session) {
     return (
@@ -14,8 +17,14 @@ export default async function AdminPage() {
           Only GitHub users in the admin allowlist can maintain flowcharts.
           Updates will be stamped with the signed-in GitHub account.
         </p>
+        {error ? (
+          <div className="notice error">
+            GitHub sign-in failed. Check the OAuth app callback URL, Vercel
+            environment variables, and admin allowlist.
+          </div>
+        ) : null}
         <div className="actions">
-          <a className="button primary" href="/api/auth/signin/github">Sign in with GitHub</a>
+          <SignInButton />
         </div>
       </main>
     );

@@ -35,6 +35,43 @@ button, input, textarea, select {
   font: inherit;
 }
 
+.app-header {
+  position: relative;
+  z-index: 10;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg);
+  padding: 18px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.brand {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+}
+
+.brand-mark,
+.header-meta {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: .15em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.brand-title {
+  font-size: var(--text-lg);
+  font-weight: 700;
+}
+
+.brand-title em {
+  color: var(--accent);
+  font-style: italic;
+  font-weight: 500;
+}
+
 .shell {
   width: min(1180px, calc(100vw - 40px));
   margin: 0 auto;
@@ -106,26 +143,44 @@ h3 {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--line);
-  background: var(--panel);
+  border: 1px solid var(--ink);
+  background: transparent;
   color: var(--ink);
-  border-radius: 6px;
+  border-radius: 0;
   min-height: 40px;
-  padding: 9px 14px;
+  padding: 9px 16px;
   text-decoration: none;
   cursor: pointer;
-  font-size: var(--text-sm);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
   font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  transition: all .15s;
 }
 
-.button.primary {
-  background: var(--accent);
-  border-color: var(--accent);
+.button:hover,
+.button.primary:hover {
+  background: var(--ink);
+  border-color: var(--ink);
   color: #fff;
 }
 
+.button.primary {
+  background: transparent;
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
 .button.danger {
+  border-color: var(--danger);
   color: var(--danger);
+}
+
+.button.danger:hover {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
 }
 
 .back-link {
@@ -225,6 +280,18 @@ h3 {
 
 .field textarea.tall {
   min-height: 180px;
+}
+
+.preview-box {
+  min-height: 220px;
+  overflow: auto;
+  border: 1px dashed var(--line);
+  background: #fff;
+  padding: 18px;
+}
+
+.preview-box svg {
+  max-width: 100%;
 }
 
 .split {

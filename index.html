@@ -215,15 +215,6 @@
   .search-box input::placeholder {
     color: var(--ink-faint);
   }
-  .search-hint {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    color: var(--ink-faint);
-    letter-spacing: 0.1em;
-    padding: 0 12px;
-    border-left: 1px solid var(--line);
-  }
-
   /* ─── Results ───────────────────────────────────── */
   .results-meta {
     font-family: 'JetBrains Mono', monospace;
@@ -782,7 +773,6 @@
   .btn-login,
   .hero-label,
   .search-box input,
-  .search-hint,
   .results-meta,
   .result-card-config,
   .result-card-client,
@@ -869,7 +859,6 @@
             oninput="onSearch()"
             autocomplete="off"
           />
-          <span class="search-hint">⌘K</span>
         </div>
       </div>
     </div>
@@ -1165,12 +1154,7 @@ Stored Procedure:
     renderResults(FLOWCHART_DATA);
     updateCount();
 
-    // Keyboard shortcut
     document.addEventListener('keydown', (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        document.getElementById('searchInput').focus();
-      }
       if (e.key === 'Escape') {
         closeLogin(); closeEditor(); closePrompt();
       }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import mermaid from "mermaid";
 
 const emptyForm = {
   configName: "",
@@ -54,6 +55,8 @@ export default function AdminDashboard({ user, publicSiteUrl }) {
   const [form, setForm] = useState(emptyForm);
   const [message, setMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [previewSvg, setPreviewSvg] = useState("");
+  const [previewError, setPreviewError] = useState("");
 
   const selected = useMemo(
     () => flows.find((flow) => flow.id === selectedId),
@@ -73,6 +76,56 @@ export default function AdminDashboard({ user, publicSiteUrl }) {
   useEffect(() => {
     loadFlows().catch((err) => setMessage(err.message));
   }, []);
+
+  useEffect(() => {
+    mermaid.initialize({
+      startOnLoad: false,
+      securityLevel: "strict",
+      theme: "base",
+      themeVariables: {
+        primaryColor: "#fff0e8",
+        primaryTextColor: "#171717",
+        primaryBorderColor: "#e6531c",
+        lineColor: "#66625d",
+        secondaryColor: "#f6f5f2",
+        tertiaryColor: "#ffffff",
+        fontFamily: "Inter, sans-serif",
+        fontSize: "14px"
+      },
+      flowchart: { curve: "basis", padding: 20 }
+    });
+  }, []);
+
+  useEffect(() => {
+    let isCancelled = false;
+    const code = form.mermaid.trim();
+
+    if (!code) {
+      setPreviewSvg("");
+      setPreviewError("");
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        const { svg } = await mermaid.render(`admin-preview-${Date.now()}`, code);
+        if (!isCancelled) {
+          setPreviewSvg(svg);
+          setPreviewError("");
+        }
+      } catch (err) {
+        if (!isCancelled) {
+          setPreviewSvg("");
+          setPreviewError(err.message || "Mermaid syntax error");
+        }
+      }
+    }, 250);
+
+    return () => {
+      isCancelled = true;
+      clearTimeout(timer);
+    };
+  }, [form.mermaid]);
 
   function selectFlow(flow) {
     setSelectedId(flow.id);
@@ -218,6 +271,19 @@ export default function AdminDashboard({ user, publicSiteUrl }) {
             <div className="field">
               <label>Mermaid source</label>
               <textarea className="tall" value={form.mermaid} onChange={(e) => updateField("mermaid", e.target.value)} required />
+            </div>
+
+            <div className="field">
+              <label>Preview</label>
+              <div className="preview-box">
+                {previewError ? (
+                  <div className="error">Syntax error: {previewError}</div>
+                ) : previewSvg ? (
+                  <div dangerouslySetInnerHTML={{ __html: previewSvg }} />
+                ) : (
+                  <span className="meta">Preview appears here.</span>
+                )}
+              </div>
             </div>
 
             <div className="field">

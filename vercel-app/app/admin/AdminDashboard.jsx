@@ -8,11 +8,9 @@ const emptyForm = {
   client: "",
   logicType: "Allocation",
   overview: "",
-  whenItApplies: "",
   mermaid: "flowchart TD\n  A([Start]) --> B[Check order]\n  B --> C([End])",
   examplesText: "",
-  exceptionsText: "",
-  relatedConfigsText: ""
+  hashtagsText: ""
 };
 
 function flowToForm(flow) {
@@ -22,11 +20,9 @@ function flowToForm(flow) {
     client: flow.client || "",
     logicType: flow.logicType || "Allocation",
     overview: flow.overview || flow.description || "",
-    whenItApplies: flow.whenItApplies || "",
     mermaid: flow.mermaid || "",
     examplesText: JSON.stringify(flow.examples || [], null, 2),
-    exceptionsText: (flow.knownExceptions || []).join("\n"),
-    relatedConfigsText: (flow.relatedConfigs || []).join(", ")
+    hashtagsText: (flow.hashtags || flow.relatedConfigs || []).map((tag) => `#${String(tag).replace(/^#+/, "")}`).join(" ")
   };
 }
 
@@ -43,15 +39,16 @@ function formToPayload(form) {
     logicType: form.logicType,
     overview: form.overview,
     description: form.overview,
-    whenItApplies: form.whenItApplies,
     mermaid: form.mermaid,
     examples,
-    knownExceptions: form.exceptionsText.split("\n").map((line) => line.trim()).filter(Boolean),
-    relatedConfigs: form.relatedConfigsText.split(",").map((item) => item.trim()).filter(Boolean)
+    hashtags: form.hashtagsText
+      .split(/[\s,]+/)
+      .map((item) => item.trim().replace(/^#+/, ""))
+      .filter(Boolean)
   };
 }
 
-export default function AdminDashboard({ user }) {
+export default function AdminDashboard({ user, publicSiteUrl }) {
   const [flows, setFlows] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [form, setForm] = useState(emptyForm);
@@ -152,6 +149,7 @@ export default function AdminDashboard({ user }) {
         </div>
         <div className="actions">
           <button className="button primary" onClick={startNew}>New flow</button>
+          <a className="button" href={publicSiteUrl}>Back to homepage</a>
           <a className="button" href="/api/auth/signout">Sign out</a>
         </div>
       </div>
@@ -199,7 +197,7 @@ export default function AdminDashboard({ user }) {
 
             <div className="split">
               <div className="field">
-                <label>Client / Owner</label>
+                <label>Storer</label>
                 <input value={form.client} onChange={(e) => updateField("client", e.target.value)} />
               </div>
               <div className="field">
@@ -211,11 +209,6 @@ export default function AdminDashboard({ user }) {
             <div className="field">
               <label>Overview</label>
               <textarea value={form.overview} onChange={(e) => updateField("overview", e.target.value)} />
-            </div>
-
-            <div className="field">
-              <label>When it applies</label>
-              <textarea value={form.whenItApplies} onChange={(e) => updateField("whenItApplies", e.target.value)} />
             </div>
 
             <div className="field">
@@ -233,13 +226,12 @@ export default function AdminDashboard({ user }) {
             </div>
 
             <div className="field">
-              <label>Known exceptions, one per line</label>
-              <textarea value={form.exceptionsText} onChange={(e) => updateField("exceptionsText", e.target.value)} />
-            </div>
-
-            <div className="field">
-              <label>Related configs, comma separated</label>
-              <input value={form.relatedConfigsText} onChange={(e) => updateField("relatedConfigsText", e.target.value)} />
+              <label>Hashtags</label>
+              <input
+                value={form.hashtagsText}
+                onChange={(e) => updateField("hashtagsText", e.target.value)}
+                placeholder="#allocation #standard #ecommerce"
+              />
             </div>
 
             <div className="actions">

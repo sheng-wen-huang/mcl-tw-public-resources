@@ -15,6 +15,7 @@ export function normalizeFlow(doc) {
     mermaid: doc.mermaid || "",
     examples: Array.isArray(doc.examples) ? doc.examples : [],
     knownExceptions: Array.isArray(doc.knownExceptions) ? doc.knownExceptions : [],
+    hashtags: Array.isArray(doc.hashtags) ? doc.hashtags : (Array.isArray(doc.relatedConfigs) ? doc.relatedConfigs : []),
     relatedConfigs: Array.isArray(doc.relatedConfigs) ? doc.relatedConfigs : [],
     updatedBy: doc.updatedBy || "",
     updatedByUserId: doc.updatedByUserId || "",
@@ -43,6 +44,7 @@ export function validateFlowPayload(payload) {
     mermaid: String(payload.mermaid || "").trim(),
     examples: Array.isArray(payload.examples) ? payload.examples : [],
     knownExceptions: Array.isArray(payload.knownExceptions) ? payload.knownExceptions : [],
+    hashtags: Array.isArray(payload.hashtags) ? payload.hashtags : (Array.isArray(payload.relatedConfigs) ? payload.relatedConfigs : []),
     relatedConfigs: Array.isArray(payload.relatedConfigs) ? payload.relatedConfigs : []
   };
 
@@ -63,9 +65,12 @@ export function validateFlowPayload(payload) {
     .map((item) => String(item || "").trim())
     .filter(Boolean);
 
-  data.relatedConfigs = data.relatedConfigs
+  data.hashtags = data.hashtags
     .map((item) => String(item || "").trim())
+    .map((item) => item.replace(/^#+/, ""))
     .filter(Boolean);
+
+  data.relatedConfigs = data.hashtags;
 
   return { data, errors };
 }

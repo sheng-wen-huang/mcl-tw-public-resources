@@ -30,5 +30,5 @@ export default async function AdminPage({ searchParams }) {
     );
   }
 
-  return <AdminDashboard user={session.user} />;
+  return <AdminDashboard user={session.user} publicSiteUrl={process.env.PUBLIC_SITE_URL || "/"} />;
 }

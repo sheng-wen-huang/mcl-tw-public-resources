@@ -761,7 +761,7 @@
   </div>
   <div class="header-meta">
     <span class="info"><span class="dot"></span>System synced · v1.0</span>
-    <button class="btn-login" id="loginBtn" onclick="toggleLogin()">Admin</button>
+    <button class="btn-login" id="loginBtn" onclick="toggleLogin()">Log In</button>
   </div>
 </header>
 
@@ -780,7 +780,7 @@
           <input
             type="text"
             id="searchInput"
-            placeholder="Search config name — try STD_ECOM, XBORDER_RTL, B2B_BULK…"
+            placeholder="Search config name or hashtag — try STD_ECOM, #allocation…"
             oninput="onSearch()"
             autocomplete="off"
           />
@@ -1118,6 +1118,7 @@ Stored Procedure:
         mermaid: item.mermaid,
         examples: item.examples || [],
         knownExceptions: item.knownExceptions || [],
+        hashtags: item.hashtags || item.relatedConfigs || [],
         relatedConfigs: item.relatedConfigs || [],
         lastUpdated: item.updatedAt ? item.updatedAt.slice(0, 10) : '',
         updatedBy: item.updatedBy || ''
@@ -1141,7 +1142,11 @@ Stored Procedure:
       item.configName.toLowerCase().includes(q) ||
       item.spName.toLowerCase().includes(q) ||
       (item.client || '').toLowerCase().includes(q) ||
-      (item.description || '').toLowerCase().includes(q)
+      (item.description || '').toLowerCase().includes(q) ||
+      getHashtags(item).some(tag =>
+        `#${tag}`.toLowerCase().includes(q) ||
+        tag.toLowerCase().includes(q.replace(/^#/, ''))
+      )
     );
     renderResults(filtered);
     document.getElementById('resultsMeta').innerHTML = `Search · ${filtered.length} match${filtered.length === 1 ? '' : 'es'} for "<strong>${escapeHTML(q)}</strong>"`;
@@ -1189,7 +1194,7 @@ Stored Procedure:
     document.getElementById('detailSP').textContent = item.spName;
     document.getElementById('detailDesc').textContent = item.overview || item.description || '';
     document.getElementById('detailMeta').innerHTML = `
-      <div class="detail-meta-item"><dt>Client</dt><dd>${escapeHTML(item.client || '—')}</dd></div>
+      <div class="detail-meta-item"><dt>Storer</dt><dd>${escapeHTML(item.client || '—')}</dd></div>
       <div class="detail-meta-item"><dt>Updated</dt><dd>${escapeHTML(item.lastUpdated || '—')}</dd></div>
       <div class="detail-meta-item"><dt>By</dt><dd>${escapeHTML(item.updatedBy || '—')}</dd></div>
     `;
@@ -1232,7 +1237,7 @@ Stored Procedure:
     if (isAdmin) {
       isAdmin = false;
       document.getElementById('adminPanel').classList.remove('active');
-      document.getElementById('loginBtn').textContent = 'Sign in';
+      document.getElementById('loginBtn').textContent = 'Log In';
       document.getElementById('loginBtn').classList.remove('active');
       toast('Signed out');
     } else {
@@ -1441,18 +1446,9 @@ Stored Procedure:
 
   function renderDetailSections(item) {
     const examples = item.examples || [];
-    const exceptions = item.knownExceptions || [];
-    const related = item.relatedConfigs || [];
+    const tags = getHashtags(item);
 
     return `
-      <section class="detail-section">
-        <h3>When it applies</h3>
-        <p>${escapeHTML(item.whenItApplies || 'No applicability notes yet.')}</p>
-      </section>
-      <section class="detail-section">
-        <h3>Known exceptions</h3>
-        ${exceptions.length ? `<ul>${exceptions.map(x => `<li>${escapeHTML(x)}</li>`).join('')}</ul>` : '<p>No known exceptions documented yet.</p>'}
-      </section>
       <section class="detail-section">
         <h3>Example orders</h3>
         ${examples.length ? examples.map(example => `
@@ -1464,10 +1460,16 @@ Stored Procedure:
         `).join('') : '<p>No examples documented yet.</p>'}
       </section>
       <section class="detail-section">
-        <h3>Related configs</h3>
-        ${related.length ? `<p>${related.map(escapeHTML).join(', ')}</p>` : '<p>No related configs documented yet.</p>'}
+        <h3>Hashtags</h3>
+        ${tags.length ? `<p>${tags.map(tag => `#${escapeHTML(tag)}`).join(' ')}</p>` : '<p>No hashtags documented yet.</p>'}
       </section>
     `;
+  }
+
+  function getHashtags(item) {
+    return (item.hashtags || item.relatedConfigs || [])
+      .map(tag => String(tag || '').trim().replace(/^#+/, ''))
+      .filter(Boolean);
   }
 
   function toast(msg) {

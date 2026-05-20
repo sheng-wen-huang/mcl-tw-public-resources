@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "seed:demo": "node scripts/seed-demo.mjs"
   },
   "dependencies": {
     "mongodb": "^6.16.0",

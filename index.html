@@ -215,6 +215,33 @@
   .search-box input::placeholder {
     color: var(--ink-faint);
   }
+  .search-box input:disabled {
+    cursor: wait;
+    opacity: 0.55;
+  }
+  .load-state {
+    max-width: 640px;
+    margin-top: 12px;
+    color: var(--ink-soft);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: 0.05em;
+  }
+  .load-state.error {
+    color: var(--err);
+  }
+  .load-state button {
+    margin-left: 10px;
+    background: transparent;
+    border: 1px solid currentColor;
+    color: inherit;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: 0.08em;
+    padding: 4px 10px;
+    text-transform: uppercase;
+  }
   /* ─── Results ───────────────────────────────────── */
   .results-meta {
     font-family: 'JetBrains Mono', monospace;
@@ -254,6 +281,38 @@
   }
   .result-card:hover::before {
     transform: translateX(0);
+  }
+  .result-card.disabled {
+    cursor: wait;
+    opacity: 0.55;
+    pointer-events: none;
+  }
+  .skeleton-card {
+    background: var(--bg-panel);
+    border: 1px solid var(--line);
+    padding: 20px;
+    min-height: 154px;
+    overflow: hidden;
+    position: relative;
+  }
+  .skeleton-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.7), transparent);
+    animation: shimmer 1.25s infinite;
+  }
+  .skeleton-line {
+    height: 12px;
+    background: var(--line);
+    margin-bottom: 12px;
+  }
+  .skeleton-line.short { width: 32%; }
+  .skeleton-line.medium { width: 58%; }
+  .skeleton-line.long { width: 86%; }
+  @keyframes shimmer {
+    100% { transform: translateX(100%); }
   }
   .result-card-header {
     display: flex;
@@ -861,6 +920,7 @@
           />
         </div>
       </div>
+      <div class="load-state" id="loadState" aria-live="polite"></div>
     </div>
 
     <div class="results-meta" id="resultsMeta">All configurations · <span id="resultsCount">0</span> available</div>
@@ -1129,6 +1189,8 @@ Stored Procedure:
   let isAdmin = false;
   let editingId = null;
   let currentDetailId = null;
+  let isInteractionReady = false;
+  const FLOWCHART_CACHE_KEY = 'wms-config-explorer:flowcharts:v1';
 
   // ═══════════════════════════════════════════════════
   //  INIT
@@ -1150,9 +1212,20 @@ Stored Procedure:
   });
 
   document.addEventListener('DOMContentLoaded', async () => {
-    await loadRemoteFlowchartData();
-    renderResults(FLOWCHART_DATA);
-    updateCount();
+    setInteractionReady(false);
+    renderSkeletonResults();
+
+    const hadCache = loadCachedFlowchartData();
+    if (hadCache) {
+      setInteractionReady(true);
+      renderResults(FLOWCHART_DATA);
+      updateCount();
+      setLoadState('Showing cached flowcharts while refreshing data...');
+    } else {
+      setLoadState('Loading flowcharts from knowledge base...');
+    }
+
+    await loadRemoteFlowchartData({ hadCache });
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
@@ -1168,39 +1241,107 @@ Stored Procedure:
     return String(window.WMS_API_BASE_URL || '').replace(/\/$/, '');
   }
 
-  async function loadRemoteFlowchartData() {
+  function normalizeRemoteFlow(item) {
+    return {
+      id: item.id,
+      configName: item.configName,
+      spName: item.spName,
+      client: item.client || '',
+      description: item.description || item.overview || '',
+      overview: item.overview || item.description || '',
+      whenItApplies: item.whenItApplies || '',
+      mermaid: item.mermaid,
+      examples: item.examples || [],
+      knownExceptions: item.knownExceptions || [],
+      hashtags: item.hashtags || item.relatedConfigs || [],
+      relatedConfigs: item.relatedConfigs || [],
+      lastUpdated: item.updatedAt ? formatDateTime(item.updatedAt) : '',
+      updatedBy: item.updatedBy || ''
+    };
+  }
+
+  function loadCachedFlowchartData() {
+    try {
+      const cached = JSON.parse(localStorage.getItem(FLOWCHART_CACHE_KEY) || 'null');
+      if (!cached || !Array.isArray(cached.data) || cached.data.length === 0) return false;
+      FLOWCHART_DATA = cached.data;
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  function cacheFlowchartData() {
+    try {
+      localStorage.setItem(FLOWCHART_CACHE_KEY, JSON.stringify({
+        savedAt: new Date().toISOString(),
+        data: FLOWCHART_DATA
+      }));
+    } catch {
+      // Cache is best-effort only.
+    }
+  }
+
+  async function loadRemoteFlowchartData({ hadCache = false } = {}) {
     const apiBase = getApiBase();
-    if (!apiBase) return;
+    if (!apiBase) {
+      setInteractionReady(true);
+      renderResults(FLOWCHART_DATA);
+      updateCount();
+      setLoadState('');
+      return;
+    }
 
     try {
       const res = await fetch(`${apiBase}/api/flows`, { cache: 'no-store' });
       if (!res.ok) throw new Error(`API returned ${res.status}`);
       const remote = await res.json();
-      FLOWCHART_DATA = remote.map(item => ({
-        id: item.id,
-        configName: item.configName,
-        spName: item.spName,
-        client: item.client || '',
-        description: item.description || item.overview || '',
-        overview: item.overview || item.description || '',
-        whenItApplies: item.whenItApplies || '',
-        mermaid: item.mermaid,
-        examples: item.examples || [],
-        knownExceptions: item.knownExceptions || [],
-        hashtags: item.hashtags || item.relatedConfigs || [],
-        relatedConfigs: item.relatedConfigs || [],
-        lastUpdated: item.updatedAt ? formatDateTime(item.updatedAt) : '',
-        updatedBy: item.updatedBy || ''
-      }));
+      FLOWCHART_DATA = remote.map(normalizeRemoteFlow);
+      cacheFlowchartData();
+      setInteractionReady(true);
+      renderResults(FLOWCHART_DATA);
+      updateCount();
+      setLoadState('');
     } catch (err) {
-      toast(`Using demo data — API load failed: ${err.message}`);
+      if (hadCache) {
+        setInteractionReady(true);
+        setLoadState(`Could not refresh data: ${err.message}`, true);
+      } else {
+        setInteractionReady(false);
+        renderLoadError(err.message);
+        setLoadState(`Could not load flowcharts: ${err.message}`, true);
+      }
     }
+  }
+
+  async function retryLoadFlowcharts() {
+    const hasVisibleData = FLOWCHART_DATA.length > 0;
+    setInteractionReady(hasVisibleData);
+    if (!hasVisibleData) renderSkeletonResults();
+    setLoadState('Retrying knowledge base...');
+    await loadRemoteFlowchartData({ hadCache: hasVisibleData });
+  }
+
+  function setInteractionReady(ready) {
+    isInteractionReady = ready;
+    const input = document.getElementById('searchInput');
+    if (input) input.disabled = !ready;
+  }
+
+  function setLoadState(message, isError = false) {
+    const state = document.getElementById('loadState');
+    if (!state) return;
+    state.classList.toggle('error', isError);
+    state.innerHTML = message
+      ? `${escapeHTML(message)}${isError ? ' <button onclick="retryLoadFlowcharts()">Retry</button>' : ''}`
+      : '';
   }
 
   // ═══════════════════════════════════════════════════
   //  SEARCH
   // ═══════════════════════════════════════════════════
   function onSearch() {
+    if (!isInteractionReady) return;
     const q = document.getElementById('searchInput').value.toLowerCase().trim();
     if (!q) {
       renderResults(FLOWCHART_DATA);
@@ -1233,7 +1374,7 @@ Stored Procedure:
       return;
     }
     grid.innerHTML = list.map(item => `
-      <div class="result-card" onclick="openDetail('${item.id}')">
+      <div class="result-card ${isInteractionReady ? '' : 'disabled'}" onclick="openDetail('${item.id}')">
         <div class="result-card-header">
           <span class="result-card-config">${escapeHTML(item.configName)}</span>
           <span class="result-card-client">${escapeHTML(item.client || '—')}</span>
@@ -1248,6 +1389,29 @@ Stored Procedure:
     `).join('');
   }
 
+  function renderSkeletonResults() {
+    const grid = document.getElementById('resultsGrid');
+    document.getElementById('resultsMeta').innerHTML = 'Loading configurations...';
+    grid.innerHTML = Array.from({ length: 6 }).map(() => `
+      <div class="skeleton-card" aria-hidden="true">
+        <div class="skeleton-line short"></div>
+        <div class="skeleton-line medium"></div>
+        <div class="skeleton-line long"></div>
+        <div class="skeleton-line long"></div>
+      </div>
+    `).join('');
+  }
+
+  function renderLoadError(message) {
+    const grid = document.getElementById('resultsGrid');
+    document.getElementById('resultsMeta').innerHTML = 'Flowcharts unavailable';
+    grid.innerHTML = `
+      <div class="no-results" style="grid-column:1/-1;">
+        Could not load flowcharts. <button class="tool-btn" onclick="retryLoadFlowcharts()">Retry</button>
+      </div>
+    `;
+  }
+
   function updateCount() {
     const el = document.getElementById('resultsCount');
     if (el) el.textContent = FLOWCHART_DATA.length;
@@ -1257,6 +1421,7 @@ Stored Procedure:
   //  DETAIL VIEW
   // ═══════════════════════════════════════════════════
   async function openDetail(id) {
+    if (!isInteractionReady) return;
     const item = FLOWCHART_DATA.find(x => x.id === id);
     if (!item) return;
     currentDetailId = id;
